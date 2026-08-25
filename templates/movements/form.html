@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Record movement - StockRoom{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Record a stock movement</h1>
+        <p class="sub">
+            Received adds to stock, issued takes away, adjusted corrects a miscount.
+        </p>
+    </div>
+</div>
+
+<section class="panel">
+    <div class="panel-body">
+        <form method="post" action="{{ url_for('movements.create') }}">
+
+            <div class="form-grid">
+                <div class="field wide">
+                    <label for="product_id">Product</label>
+                    <select id="product_id" name="product_id" required>
+                        <option value="">Choose a product</option>
+                        {% for p in products %}
+                            <option value="{{ p.product_id }}"
+                                {% if preselected|string == p.product_id|string %}selected{% endif %}>
+                                {{ p.sku }} &mdash; {{ p.name }} ({{ p.quantity }} in stock)
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="movement_type">Movement type</label>
+                    <select id="movement_type" name="movement_type" required>
+                        <option value="IN"     {% if form.get('movement_type') == 'IN'     %}selected{% endif %}>Received &mdash; stock coming in</option>
+                        <option value="OUT"    {% if form.get('movement_type') == 'OUT'    %}selected{% endif %}>Issued &mdash; stock going out</option>
+                        <option value="ADJUST" {% if form.get('movement_type') == 'ADJUST' %}selected{% endif %}>Adjusted &mdash; correcting a count</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="quantity">Quantity</label>
+                    <input type="number" id="quantity" name="quantity"
+                           value="{{ form.get('quantity', '') }}" required>
+                    <span class="hint">
+                        A positive whole number for received and issued.
+                        For an adjustment use a negative number to reduce stock, e.g. -2.
+                    </span>
+                </div>
+
+                <div class="field wide">
+                    <label for="note">Note</label>
+                    <input type="text" id="note" name="note" maxlength="255"
+                           value="{{ form.get('note', '') }}"
+                           placeholder="e.g. Purchase order PO-124, or Sold - invoice INV-0451">
+                    <span class="hint">Optional, but it is what makes the audit trail useful later.</span>
+                </div>
+            </div>
+
+            <div class="form-foot">
+                <button type="submit" class="btn primary">Save movement</button>
+                <a class="btn" href="{{ url_for('movements.index') }}">Cancel</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

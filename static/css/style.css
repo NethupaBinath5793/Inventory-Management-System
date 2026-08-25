@@ -1,0 +1,962 @@
+/* ==========================================================
+   StockRoom - stylesheet
+
+   Written by hand, no framework and no CDN. Everything is in
+   this one file, which means the interface renders correctly
+   with the network unplugged - worth knowing before you
+   record a demo on a machine that might not have internet.
+
+   Design notes:
+   - Numbers, SKUs and money use a monospace face so columns
+     of figures line up down the page. In a stock system the
+     numbers are the content, so they get their own typeface.
+   - The palette is charcoal and amber: charcoal and grey carry
+     the structure, amber is the single accent, black is
+     reserved for the most severe state ("empty", "delete").
+     Amber on white is far too pale to read, so amber is only
+     ever a background or a border - never body text - and
+     anything sitting on it is black.
+     Colour is never the only signal - every status also has
+     a word next to it, for anyone who cannot distinguish them.
+   ========================================================== */
+
+:root {
+    /* --- The five brand colours -------------------------- */
+    --charcoal:      #2b2b2b;
+    --grey:          #58595b;
+    --amber:         #ffc61e;
+    --white:         #ffffff;
+    --black:         #000000;
+
+    /* Everything below is one of those five, or one of them
+       thinned over white - nothing strays outside the palette.
+
+       Surfaces */
+    --canvas:        #f0f0f0;   /* charcoal, barely there */
+    --surface:       var(--white);
+    --surface-sunk:  #f6f6f6;
+    --ink:           var(--charcoal);
+    --ink-soft:      var(--grey);
+
+    /* Text */
+    --text:          var(--charcoal);
+    --text-muted:    var(--grey);
+    --text-invert:   var(--white);
+
+    /* Lines */
+    --line:          #e0e0e0;
+    --line-strong:   #c4c4c4;
+
+    /* Accent. --accent-dark is the hover shade, --accent-wash
+       the pale tint behind "needs attention" panels, and
+       --on-accent is what may sit on top of amber: black only,
+       because white on amber is unreadable. */
+    --accent:        var(--amber);
+    --accent-dark:   #e6ad00;
+    --accent-wash:   #fff6dc;
+    --on-accent:     var(--black);
+
+    /* Type */
+    --font-ui: "Segoe UI", Roboto, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --font-num: "Cascadia Mono", "Consolas", "SF Mono", "DejaVu Sans Mono", monospace;
+
+    --radius: 5px;
+    --sidebar-width: 232px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-ui);
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--text);
+    background: var(--canvas);
+}
+
+/* Amber is unreadable as text on white, so links stay charcoal
+   and carry the accent in the underline instead. */
+a {
+    color: var(--text);
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 2px;
+}
+
+a:hover {
+    color: var(--black);
+    text-decoration-color: var(--black);
+}
+
+/* Keyboard focus must always be visible. Black reads against
+   every light surface; the dark sidebar overrides it below. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--black);
+    outline-offset: 2px;
+}
+
+.sidebar a:focus-visible,
+.sidebar button:focus-visible,
+.login-page a:focus-visible {
+    outline-color: var(--accent);
+}
+
+/* ----------------------------------------------------------
+   Sign-in page
+   ---------------------------------------------------------- */
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ink);
+    padding: 24px;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 34px 32px 30px;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, .38);
+}
+
+.login-card .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.login-card .brand-name {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -.4px;
+}
+
+.login-card .brand-tag {
+    font-family: var(--font-num);
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+}
+
+.login-card .lede {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin: 0 0 22px;
+}
+
+/* Grey, not amber: on this page the amber wash belongs to the
+   sign-in error, and two amber blocks would compete. */
+.demo-note {
+    margin-top: 22px;
+    padding: 12px 14px;
+    background: var(--surface-sunk);
+    border-left: 3px solid var(--line-strong);
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.demo-note code {
+    font-family: var(--font-num);
+    color: var(--text);
+}
+
+/* ----------------------------------------------------------
+   Shell: sidebar + content
+   ---------------------------------------------------------- */
+.shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: var(--sidebar-width);
+    flex-shrink: 0;
+    background: var(--ink);
+    color: var(--text-invert);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.sidebar-brand {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, .09);
+}
+
+.sidebar-brand .brand-name {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -.3px;
+    display: block;
+}
+
+.sidebar-brand .brand-tag {
+    font-family: var(--font-num);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: rgba(255, 255, 255, .55);
+}
+
+.sidebar-nav {
+    flex: 1;
+    padding: 14px 10px;
+    overflow-y: auto;
+}
+
+.nav-heading {
+    font-family: var(--font-num);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: rgba(255, 255, 255, .45);
+    padding: 14px 10px 6px;
+}
+
+.nav-link {
+    display: block;
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    color: rgba(255, 255, 255, .82);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, .07);
+    color: var(--white);
+}
+
+.nav-link.is-active {
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 600;
+}
+
+.nav-link .count {
+    float: right;
+    font-family: var(--font-num);
+    font-size: 12px;
+    opacity: .8;
+}
+
+.sidebar-foot {
+    padding: 14px 16px;
+    border-top: 1px solid rgba(255, 255, 255, .09);
+    font-size: 13px;
+}
+
+.sidebar-foot .who { font-weight: 600; }
+
+.sidebar-foot .role {
+    font-family: var(--font-num);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: rgba(255, 255, 255, .55);
+    display: block;
+}
+
+.sidebar-foot a {
+    color: rgba(255, 255, 255, .78);
+    font-size: 13px;
+    display: inline-block;
+    margin-top: 8px;
+}
+
+.content {
+    flex: 1;
+    min-width: 0;
+    padding: 26px 30px 60px;
+}
+
+/* ----------------------------------------------------------
+   Page header
+   ---------------------------------------------------------- */
+.page-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.page-head h1 {
+    margin: 0;
+    font-size: 25px;
+    font-weight: 700;
+    letter-spacing: -.4px;
+}
+
+.page-head .sub {
+    margin: 3px 0 0;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.page-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* ----------------------------------------------------------
+   Flash messages
+   ---------------------------------------------------------- */
+.flashes { margin-bottom: 18px; }
+
+.flash {
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+    font-size: 14px;
+    border-left: 3px solid;
+}
+
+/* Success is quiet and grey; an error takes the amber wash and a
+   black rule, so the two never rely on hue alone to tell apart. */
+.flash.success {
+    background: var(--surface-sunk);
+    border-left-color: var(--charcoal);
+    color: var(--charcoal);
+}
+
+.flash.error {
+    background: var(--accent-wash);
+    border-left-color: var(--black);
+    color: var(--black);
+    font-weight: 600;
+}
+
+/* ----------------------------------------------------------
+   Cards and panels
+   ---------------------------------------------------------- */
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+}
+
+.panel-head {
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.panel-head h2 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+/* Keeps the accent underline from the base link rule - without
+   it this reads as plain charcoal text and stops looking clickable. */
+.panel-head .link-more {
+    font-size: 13px;
+}
+
+.panel-body { padding: 18px; }
+
+/* ----------------------------------------------------------
+   Stat tiles
+   ---------------------------------------------------------- */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+/* Report pages show only two or three tiles. Left to auto-fit they
+   stretch the full width and look stranded, so cap them instead. */
+.stat-grid.compact {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 260px));
+    justify-content: start;
+}
+
+.stat {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 15px 17px;
+}
+
+.stat .label {
+    font-family: var(--font-num);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .11em;
+    color: var(--text-muted);
+    display: block;
+}
+
+.stat .value {
+    font-family: var(--font-num);
+    font-size: 27px;
+    font-weight: 600;
+    letter-spacing: -.6px;
+    display: block;
+    margin-top: 3px;
+    font-variant-numeric: tabular-nums;
+}
+
+.stat .value .unit {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.stat .foot {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* "Needs attention" wears the amber wash. "Nothing left" goes
+   solid black - the strongest thing the palette can say. */
+.stat.alert { border-color: var(--accent); background: var(--accent-wash); }
+.stat.alert .value { color: var(--black); }
+
+.stat.danger { border-color: var(--black); background: var(--black); }
+.stat.danger .value { color: var(--white); }
+.stat.danger .label,
+.stat.danger .foot,
+.stat.danger .value .unit { color: rgba(255, 255, 255, .72); }
+
+/* Links sit on these tinted tiles, so they need their own
+   colours - the charcoal default disappears into the black one. */
+.stat.danger a { color: var(--white); }
+.stat.danger a:hover { color: var(--accent); text-decoration-color: var(--accent); }
+.stat.alert a { text-decoration-color: var(--black); }
+
+/* ----------------------------------------------------------
+   Tables
+   ---------------------------------------------------------- */
+.table-wrap {
+    overflow-x: auto;
+}
+
+table.data {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+table.data th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--surface-sunk);
+    border-bottom: 1px solid var(--line);
+    font-family: var(--font-num);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--text-muted);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+table.data th a {
+    color: inherit;
+    text-decoration: none;
+}
+
+table.data th a:hover { color: var(--black); }
+
+table.data td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+}
+
+table.data tbody tr:last-child td { border-bottom: none; }
+table.data tbody tr:hover { background: var(--surface-sunk); }
+
+table.data td.num,
+table.data th.num {
+    text-align: right;
+    font-family: var(--font-num);
+    font-variant-numeric: tabular-nums;
+}
+
+.sku {
+    font-family: var(--font-num);
+    font-size: 12.5px;
+    color: var(--text-muted);
+    letter-spacing: -.2px;
+}
+
+.product-name {
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--text);
+}
+
+.product-name:hover {
+    color: var(--black);
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 2px;
+}
+
+.row-note {
+    font-size: 12.5px;
+    color: var(--text-muted);
+}
+
+/* ----------------------------------------------------------
+   Stock gauge - the signature element.
+
+   A short bar showing quantity against reorder level. Full and
+   charcoal means healthy, part-filled amber means at or under
+   the reorder point, black means nothing left. It turns a
+   column of numbers into something scannable in one pass.
+   ---------------------------------------------------------- */
+.gauge {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    justify-content: flex-end;
+}
+
+.gauge-track {
+    width: 62px;
+    height: 7px;
+    background: var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.gauge-fill {
+    height: 100%;
+    background: var(--charcoal);
+    border-radius: 4px;
+}
+
+.gauge-fill.low   { background: var(--accent); }
+.gauge-fill.empty { background: var(--black); }
+
+.gauge-figure {
+    font-family: var(--font-num);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    min-width: 34px;
+    text-align: right;
+}
+
+/* ----------------------------------------------------------
+   Status pills
+   ---------------------------------------------------------- */
+.pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-family: var(--font-num);
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    white-space: nowrap;
+}
+
+/* Solid amber and solid black are the two loud states. The
+   quieter ones sit on the sunk grey so they recede. */
+.pill.ok    { background: var(--surface-sunk); color: var(--charcoal); }
+.pill.low   { background: var(--accent);       color: var(--on-accent); }
+.pill.empty { background: var(--black);        color: var(--white); }
+.pill.in    { background: var(--accent);       color: var(--on-accent); }
+.pill.out   { background: var(--charcoal);     color: var(--white); }
+.pill.adjust{ background: var(--surface-sunk); color: var(--text-muted); }
+.pill.admin { background: var(--ink); color: var(--text-invert); }
+.pill.staff { background: var(--surface-sunk); color: var(--text-muted); }
+.pill.muted { background: var(--surface-sunk); color: var(--text-muted); }
+
+/* ----------------------------------------------------------
+   Buttons
+   ---------------------------------------------------------- */
+.btn {
+    display: inline-block;
+    padding: 8px 15px;
+    border-radius: var(--radius);
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    line-height: 1.4;
+}
+
+.btn:hover {
+    background: var(--surface-sunk);
+    color: var(--text);
+}
+
+.btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+}
+
+.btn.primary:hover {
+    background: var(--accent-dark);
+    border-color: var(--accent-dark);
+    color: var(--on-accent);
+}
+
+/* Destructive actions are outlined in black and fill in on
+   hover, so the weight of the button grows as you commit. */
+.btn.danger {
+    background: var(--surface);
+    border-color: var(--black);
+    color: var(--black);
+}
+
+.btn.danger:hover {
+    background: var(--black);
+    border-color: var(--black);
+    color: var(--white);
+}
+
+.btn.small { padding: 5px 11px; font-size: 13px; }
+
+.btn-row {
+    display: flex;
+    gap: 9px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* ----------------------------------------------------------
+   Forms
+   ---------------------------------------------------------- */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.field { display: block; }
+.field.wide { grid-column: 1 / -1; }
+
+.field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.field .hint {
+    display: block;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-top: 4px;
+}
+
+.field input[type="text"],
+.field input[type="password"],
+.field input[type="number"],
+.field input[type="email"],
+.field input[type="date"],
+.field select,
+.field textarea {
+    width: 100%;
+    padding: 8px 11px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 14px;
+    background: var(--surface);
+    color: var(--text);
+}
+
+.field input[type="number"],
+.field input[name="sku"] {
+    font-family: var(--font-num);
+}
+
+.field textarea { min-height: 74px; resize: vertical; }
+
+.field .check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 400;
+}
+
+.form-foot {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    gap: 9px;
+    align-items: center;
+}
+
+/* ----------------------------------------------------------
+   Filter bar
+   ---------------------------------------------------------- */
+.filters {
+    display: flex;
+    gap: 9px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    padding: 14px 18px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+}
+
+.filters .field { min-width: 150px; }
+.filters .field.grow { flex: 1; min-width: 210px; }
+
+/* ----------------------------------------------------------
+   Category bars (dashboard)
+   ---------------------------------------------------------- */
+.bar-list { list-style: none; margin: 0; padding: 0; }
+
+.bar-list li { margin-bottom: 13px; }
+.bar-list li:last-child { margin-bottom: 0; }
+
+.bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+.bar-label .figure {
+    font-family: var(--font-num);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+}
+
+.bar-track {
+    height: 8px;
+    background: var(--surface-sunk);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    background: var(--ink-soft);
+    border-radius: 4px;
+}
+
+/* ----------------------------------------------------------
+   Two-column layout
+   ---------------------------------------------------------- */
+.split {
+    display: grid;
+    grid-template-columns: 1.55fr 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+/* ----------------------------------------------------------
+   Definition list (product detail)
+   ---------------------------------------------------------- */
+.detail-list {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 9px 20px;
+    font-size: 14px;
+}
+
+.detail-list dt {
+    font-family: var(--font-num);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--text-muted);
+    padding-top: 3px;
+}
+
+.detail-list dd { margin: 0; }
+
+.detail-list dd.figure {
+    font-family: var(--font-num);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ----------------------------------------------------------
+   Empty states
+   ---------------------------------------------------------- */
+/* Scoped to div deliberately. "empty" is also a pill modifier
+   (<span class="pill empty">), and an unscoped .empty rule wins
+   the padding over .pill on equal specificity, which inflates
+   that badge into a large block. */
+div.empty {
+    padding: 42px 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+div.empty h3 {
+    margin: 0 0 6px;
+    font-size: 16px;
+    color: var(--text);
+}
+
+div.empty p { margin: 0 0 16px; font-size: 14px; }
+
+/* ----------------------------------------------------------
+   Pagination
+   ---------------------------------------------------------- */
+.pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--line);
+    font-size: 13.5px;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+}
+
+.pager .pages { display: flex; gap: 6px; }
+
+.pager .pages a,
+.pager .pages span {
+    padding: 4px 10px;
+    border-radius: var(--radius);
+    border: 1px solid var(--line-strong);
+    text-decoration: none;
+    font-family: var(--font-num);
+    font-size: 13px;
+}
+
+.pager .pages .current {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+    font-weight: 700;
+}
+
+/* ----------------------------------------------------------
+   Report links
+   ---------------------------------------------------------- */
+.report-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 16px;
+}
+
+.report-card {
+    display: block;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px;
+    text-decoration: none;
+    color: var(--text);
+}
+
+.report-card:hover {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+    color: var(--text);
+}
+
+.report-card h3 { margin: 0 0 5px; font-size: 15.5px; }
+.report-card p { margin: 0; font-size: 13.5px; color: var(--text-muted); }
+
+/* ----------------------------------------------------------
+   Error page
+   ---------------------------------------------------------- */
+.error-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+}
+
+.error-page .code {
+    font-family: var(--font-num);
+    font-size: 62px;
+    font-weight: 700;
+    color: var(--line-strong);
+    line-height: 1;
+}
+
+/* ----------------------------------------------------------
+   Responsive: the sidebar becomes a top bar on narrow screens
+   ---------------------------------------------------------- */
+@media (max-width: 880px) {
+    .shell { flex-direction: column; }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+    }
+
+    .sidebar-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 10px;
+    }
+
+    .nav-heading { display: none; }
+    .nav-link .count { display: none; }
+
+    .sidebar-foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .content { padding: 18px 16px 44px; }
+    .split { grid-template-columns: 1fr; }
+
+    /* Without a minimum width the browser crushes the columns and
+       every product name wraps onto five lines. Giving the table a
+       floor makes .table-wrap scroll sideways instead, which keeps
+       each row readable. */
+    table.data { min-width: 660px; }
+    .product-name { white-space: nowrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+}
+
+/* Printed reports should not carry the navigation with them. */
+@media print {
+    .sidebar, .page-actions, .filters, .pager { display: none; }
+    body { background: var(--white); }
+    .panel { border-color: var(--grey); }
+}

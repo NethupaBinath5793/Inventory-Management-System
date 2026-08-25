@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Stock valuation - StockRoom{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Stock valuation</h1>
+        <p class="sub">Quantity held multiplied by unit price. Generated {{ now | datetimeformat }}</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn" href="{{ url_for('reports.export', report='inventory') }}">Export CSV</a>
+        <a class="btn" href="{{ url_for('reports.index') }}">All reports</a>
+    </div>
+</div>
+
+<div class="stat-grid compact">
+    <div class="stat">
+        <span class="label">Total stock value</span>
+        <span class="value"><span class="unit">{{ currency }}</span> {{ grand_total | money }}</span>
+    </div>
+    <div class="stat">
+        <span class="label">Categories</span>
+        <span class="value">{{ rows | length }}</span>
+    </div>
+</div>
+
+<div class="split">
+    <section class="panel">
+        <div class="panel-head"><h2>Value by category</h2></div>
+        <div class="table-wrap">
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th class="num">Products</th>
+                        <th class="num">Units</th>
+                        <th class="num">Value ({{ currency }})</th>
+                        <th class="num">Share</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in rows %}
+                    <tr>
+                        <td>{{ row.category_name }}</td>
+                        <td class="num">{{ row.product_count }}</td>
+                        <td class="num">{{ '{:,}'.format(row.units) }}</td>
+                        <td class="num">{{ row.value | money }}</td>
+                        <td class="num">{{ row.share }}%</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th>Total</th>
+                        <th class="num"></th>
+                        <th class="num"></th>
+                        <th class="num">{{ grand_total | money }}</th>
+                        <th class="num">100%</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-head"><h2>Highest value products</h2></div>
+        <div class="table-wrap">
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th class="num">Qty</th>
+                        <th class="num">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for item in top_items %}
+                    <tr>
+                        <td>
+                            {{ item.name }}
+                            <div class="sku">{{ item.sku }}</div>
+                        </td>
+                        <td class="num">{{ item.quantity }}</td>
+                        <td class="num">{{ item.line_value | money }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

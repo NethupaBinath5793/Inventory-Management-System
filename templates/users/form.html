@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Add user' if mode == 'create' else 'Edit user' }} - StockRoom{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>{{ 'Add user' if mode == 'create' else 'Edit user' }}</h1>
+        <p class="sub">
+            {% if mode == 'edit' %}
+                Leave the password fields blank to keep the current password.
+            {% else %}
+                At least 8 characters, with a letter and a number.
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<section class="panel">
+    <div class="panel-body">
+        <form method="post"
+              action="{% if mode == 'create' %}{{ url_for('users.create') }}{% else %}{{ url_for('users.edit', user_id=user.user_id) }}{% endif %}">
+
+            <div class="form-grid">
+                <div class="field">
+                    <label for="full_name">Full name</label>
+                    <input type="text" id="full_name" name="full_name" maxlength="100"
+                           value="{{ user.full_name }}" required autofocus>
+                </div>
+
+                <div class="field">
+                    <label for="username">Username</label>
+                    {% if mode == 'create' %}
+                        <input type="text" id="username" name="username" maxlength="50"
+                               value="{{ user.username }}" required autocomplete="off">
+                        <span class="hint">Lowercase letters, numbers, dots and underscores.</span>
+                    {% else %}
+                        {# The username identifies the account in the audit
+                           trail, so it is fixed once created. #}
+                        <input type="text" id="username" value="{{ user.username }}"
+                               disabled>
+                        <span class="hint">Usernames cannot be changed after the account is created.</span>
+                    {% endif %}
+                </div>
+
+                <div class="field">
+                    <label for="role">Role</label>
+                    <select id="role" name="role">
+                        <option value="staff" {% if user.role == 'staff' %}selected{% endif %}>Store assistant</option>
+                        <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Administrator</option>
+                    </select>
+                    <span class="hint">Administrators can also manage products, suppliers and accounts.</span>
+                </div>
+
+                {% if mode == 'edit' %}
+                    <div class="field">
+                        <label>Status</label>
+                        <label class="check">
+                            <input type="checkbox" name="is_active" value="1"
+                                   {% if user.is_active %}checked{% endif %}>
+                            Account is active
+                        </label>
+                        <span class="hint">A deactivated account cannot sign in but keeps its history.</span>
+                    </div>
+                {% endif %}
+
+                <div class="field">
+                    <label for="password">{{ 'Password' if mode == 'create' else 'New password' }}</label>
+                    <input type="password" id="password" name="password"
+                           autocomplete="new-password"
+                           {% if mode == 'create' %}required{% endif %}>
+                </div>
+
+                <div class="field">
+                    <label for="confirm_password">Confirm password</label>
+                    <input type="password" id="confirm_password" name="confirm_password"
+                           autocomplete="new-password"
+                           {% if mode == 'create' %}required{% endif %}>
+                </div>
+            </div>
+
+            <div class="form-foot">
+                <button type="submit" class="btn primary">
+                    {{ 'Create account' if mode == 'create' else 'Save changes' }}
+                </button>
+                <a class="btn" href="{{ url_for('users.index') }}">Cancel</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

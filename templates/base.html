@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}StockRoom{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="shell">
+
+    {# ---- Sidebar ---------------------------------------- #}
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <span class="brand-name">StockRoom</span>
+            <span class="brand-tag">Inventory control</span>
+        </div>
+
+        <nav class="sidebar-nav">
+            {# request.blueprint tells us which feature area we are in,
+               so the matching link can be marked as current. #}
+            <a class="nav-link {% if request.blueprint == 'dashboard' %}is-active{% endif %}"
+               href="{{ url_for('dashboard.index') }}">Dashboard</a>
+
+            <div class="nav-heading">Stock</div>
+            <a class="nav-link {% if request.blueprint == 'products' %}is-active{% endif %}"
+               href="{{ url_for('products.index') }}">Products</a>
+            <a class="nav-link {% if request.blueprint == 'movements' %}is-active{% endif %}"
+               href="{{ url_for('movements.index') }}">Stock movements</a>
+            <a class="nav-link {% if request.blueprint == 'reports' %}is-active{% endif %}"
+               href="{{ url_for('reports.index') }}">Reports</a>
+
+            <div class="nav-heading">Catalogue</div>
+            <a class="nav-link {% if request.blueprint == 'categories' %}is-active{% endif %}"
+               href="{{ url_for('categories.index') }}">Categories</a>
+            <a class="nav-link {% if request.blueprint == 'suppliers' %}is-active{% endif %}"
+               href="{{ url_for('suppliers.index') }}">Suppliers</a>
+
+            {# Administrator-only links are hidden here, but the real
+               protection is @admin_required on the route itself. #}
+            {% if current_user.role == 'admin' %}
+                <div class="nav-heading">Administration</div>
+                <a class="nav-link {% if request.blueprint == 'users' %}is-active{% endif %}"
+                   href="{{ url_for('users.index') }}">User accounts</a>
+            {% endif %}
+        </nav>
+
+        <div class="sidebar-foot">
+            <div>
+                <span class="who">{{ current_user.name }}</span>
+                <span class="role">{{ current_user.role }}</span>
+            </div>
+            <a href="{{ url_for('auth.logout') }}">Sign out</a>
+        </div>
+    </aside>
+
+    {# ---- Main content ------------------------------------ #}
+    <main class="content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flashes">
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+</div>
+</body>
+</html>

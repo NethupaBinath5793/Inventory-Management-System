@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Movement history - StockRoom{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Movement history</h1>
+        <p class="sub">{{ date_from.strftime('%d %b %Y') }} to {{ date_to.strftime('%d %b %Y') }}</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn" href="{{ url_for('reports.export', report='movements',
+                                        from=date_from, to=date_to) }}">Export CSV</a>
+        <a class="btn" href="{{ url_for('reports.index') }}">All reports</a>
+    </div>
+</div>
+
+<form class="filters" method="get" action="{{ url_for('reports.movements') }}">
+    <div class="field">
+        <label for="from">From</label>
+        <input type="date" id="from" name="from" value="{{ date_from }}">
+    </div>
+    <div class="field">
+        <label for="to">To</label>
+        <input type="date" id="to" name="to" value="{{ date_to }}">
+    </div>
+    <div class="btn-row">
+        <button type="submit" class="btn primary">Apply</button>
+        <a class="btn" href="{{ url_for('reports.movements') }}">Last 30 days</a>
+    </div>
+</form>
+
+<div class="stat-grid">
+    <div class="stat">
+        <span class="label">Units received</span>
+        <span class="value">{{ '{:,}'.format(summary.total_in) }}</span>
+    </div>
+    <div class="stat">
+        <span class="label">Units issued</span>
+        <span class="value">{{ '{:,}'.format(summary.total_out) }}</span>
+    </div>
+    <div class="stat">
+        <span class="label">Net change</span>
+        <span class="value">{{ '{:+,}'.format(summary.total_in - summary.total_out) }}</span>
+        <span class="foot">received minus issued</span>
+    </div>
+    <div class="stat">
+        <span class="label">Movements logged</span>
+        <span class="value">{{ summary.movement_count }}</span>
+    </div>
+</div>
+
+<div class="split">
+    <section class="panel">
+        <div class="panel-head"><h2>All movements in this period</h2></div>
+
+        {% if rows %}
+            <div class="table-wrap">
+                <table class="data">
+                    <thead>
+                        <tr>
+                            <th>When</th>
+                            <th>Product</th>
+                            <th>Type</th>
+                            <th class="num">Quantity</th>
+                            <th>Recorded by</th>
+                            <th>Note</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for m in rows %}
+                        <tr>
+                            <td class="row-note">{{ m.created_at | datetimeformat }}</td>
+                            <td>
+                                {{ m.product_name }}
+                                <div class="sku">{{ m.sku }}</div>
+                            </td>
+                            <td>
+                                {% if m.movement_type == 'IN' %}
+                                    <span class="pill in">Received</span>
+                                {% elif m.movement_type == 'OUT' %}
+                                    <span class="pill out">Issued</span>
+                                {% else %}
+                                    <span class="pill adjust">Adjusted</span>
+                                {% endif %}
+                            </td>
+                            <td class="num">{{ m.quantity }}</td>
+                            <td>{{ m.user_name or '-' }}</td>
+                            <td class="row-note">{{ m.note or '-' }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty">
+                <h3>No movements in this period</h3>
+                <p>Widen the date range to see more.</p>
+            </div>
+        {% endif %}
+    </section>
+
+    <section class="panel">
+        <div class="panel-head"><h2>Busiest products</h2></div>
+        {% if busiest %}
+            <div class="table-wrap">
+                <table class="data">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th class="num">Units moved</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for b in busiest %}
+                        <tr>
+                            <td>
+                                {{ b.product_name }}
+                                <div class="sku">{{ b.sku }} &middot; {{ b.movement_count }} movement(s)</div>
+                            </td>
+                            <td class="num">{{ '{:,}'.format(b.units_moved) }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty">
+                <p>Nothing moved in this period.</p>
+            </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

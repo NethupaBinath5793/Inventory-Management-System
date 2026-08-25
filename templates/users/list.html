@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}User accounts - StockRoom{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>User accounts</h1>
+        <p class="sub">
+            Administrators manage the catalogue and accounts. Store assistants
+            record stock movements and read reports.
+        </p>
+    </div>
+    <div class="page-actions">
+        <a class="btn primary" href="{{ url_for('users.create') }}">Add user</a>
+    </div>
+</div>
+
+<section class="panel">
+    <div class="table-wrap">
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th class="num">Movements logged</th>
+                    <th>Created</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for u in users %}
+                <tr>
+                    <td>
+                        <span class="product-name">{{ u.full_name }}</span>
+                        {% if u.user_id == current_user.id %}
+                            <span class="row-note">This is you</span>
+                        {% endif %}
+                    </td>
+                    <td class="sku">{{ u.username }}</td>
+                    <td><span class="pill {{ u.role }}">{{ u.role }}</span></td>
+                    <td>
+                        {% if u.is_active %}
+                            <span class="pill ok">Active</span>
+                        {% else %}
+                            <span class="pill muted">Deactivated</span>
+                        {% endif %}
+                    </td>
+                    <td class="num">{{ u.movement_count }}</td>
+                    <td class="row-note">{{ u.created_at | datetimeformat('%d %b %Y') }}</td>
+                    <td>
+                        <div class="btn-row">
+                            <a class="btn small"
+                               href="{{ url_for('users.edit', user_id=u.user_id) }}">Edit</a>
+                            {% if u.user_id != current_user.id %}
+                                <form method="post"
+                                      action="{{ url_for('users.delete', user_id=u.user_id) }}"
+                                      onsubmit="return confirm('Delete the account for {{ u.full_name }}?');">
+                                    <button type="submit" class="btn small danger">Delete</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

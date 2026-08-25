@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - StockRoom{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Dashboard</h1>
+        <p class="sub">{{ now.strftime('%A %d %B %Y') }}</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn" href="{{ url_for('movements.create') }}">Record movement</a>
+        {% if current_user.role == 'admin' %}
+            <a class="btn primary" href="{{ url_for('products.create') }}">Add product</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat">
+        <span class="label">Products</span>
+        <span class="value">{{ totals.product_count }}</span>
+        <span class="foot">across {{ supplier_count }} supplier(s)</span>
+    </div>
+
+    <div class="stat">
+        <span class="label">Units in stock</span>
+        <span class="value">{{ '{:,}'.format(totals.units_in_stock) }}</span>
+        <span class="foot">total counted units</span>
+    </div>
+
+    <div class="stat">
+        <span class="label">Stock value</span>
+        <span class="value"><span class="unit">{{ currency }}</span> {{ totals.stock_value | money }}</span>
+        <span class="foot">at current unit prices</span>
+    </div>
+
+    <div class="stat {% if low_stock_count %}alert{% endif %}">
+        <span class="label">At or below reorder level</span>
+        <span class="value">{{ low_stock_count }}</span>
+        <span class="foot">
+            {% if low_stock_count %}
+                <a href="{{ url_for('reports.low_stock') }}">See what to order</a>
+            {% else %}
+                everything is above its reorder point
+            {% endif %}
+        </span>
+    </div>
+
+    <div class="stat {% if out_of_stock_count %}danger{% endif %}">
+        <span class="label">Out of stock</span>
+        <span class="value">{{ out_of_stock_count }}</span>
+        <span class="foot">
+            {% if out_of_stock_count %}
+                <a href="{{ url_for('products.index', stock='out') }}">View products</a>
+            {% else %}
+                nothing has run out
+            {% endif %}
+        </span>
+    </div>
+</div>
+
+<div class="split">
+
+    {# ---- Needs reordering ---------------------------------- #}
+    <section class="panel">
+        <div class="panel-head">
+            <h2>Needs reordering</h2>
+            <a class="link-more" href="{{ url_for('reports.low_stock') }}">Full report</a>
+        </div>
+
+        {% if low_stock_items %}
+            <div class="table-wrap">
+                <table class="data">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th class="num">In stock</th>
+                            <th class="num">Reorder at</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for item in low_stock_items %}
+                        <tr>
+                            <td>
+                                <a class="product-name"
+                                   href="{{ url_for('products.view', product_id=item.product_id) }}">{{ item.name }}</a>
+                                <div class="sku">{{ item.sku }}</div>
+                            </td>
+                            <td>{{ item.category_name or 'Uncategorised' }}</td>
+                            <td class="num">{{ item.quantity }}</td>
+                            <td class="num">{{ item.reorder_level }}</td>
+                            <td>
+                                {% if item.quantity == 0 %}
+                                    <span class="pill empty">Empty</span>
+                                {% else %}
+                                    <span class="pill low">Low</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty">
+                <h3>Nothing to order</h3>
+                <p>Every product is above its reorder level.</p>
+            </div>
+        {% endif %}
+    </section>
+
+    {# ---- Stock by category -------------------------------- #}
+    <section class="panel">
+        <div class="panel-head">
+            <h2>Units by category</h2>
+        </div>
+        <div class="panel-body">
+            {% if by_category %}
+                <ul class="bar-list">
+                {% for row in by_category %}
+                    <li>
+                        <div class="bar-label">
+                            <span>{{ row.category_name }}</span>
+                            <span class="figure">{{ '{:,}'.format(row.units) }} units &middot; {{ row.product_count }} item(s)</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width: {{ row.bar_percent }}%"></div>
+                        </div>
+                    </li>
+                {% endfor %}
+                </ul>
+            {% else %}
+                <div class="empty">
+                    <h3>No products yet</h3>
+                    <p>Add a product to see the breakdown here.</p>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+
+{# ---- Recent movements ------------------------------------- #}
+<section class="panel">
+    <div class="panel-head">
+        <h2>Recent stock movements</h2>
+        <a class="link-more" href="{{ url_for('movements.index') }}">See all</a>
+    </div>
+
+    {% if recent_movements %}
+        <div class="table-wrap">
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th>When</th>
+                        <th>Product</th>
+                        <th>Type</th>
+                        <th class="num">Quantity</th>
+                        <th>Recorded by</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for m in recent_movements %}
+                    <tr>
+                        <td class="row-note">{{ m.created_at | datetimeformat }}</td>
+                        <td>
+                            {{ m.product_name }}
+                            <div class="sku">{{ m.sku }}</div>
+                        </td>
+                        <td>
+                            {% if m.movement_type == 'IN' %}
+                                <span class="pill in">Received</span>
+                            {% elif m.movement_type == 'OUT' %}
+                                <span class="pill out">Issued</span>
+                            {% else %}
+                                <span class="pill adjust">Adjusted</span>
+                            {% endif %}
+                        </td>
+                        <td class="num">{{ m.quantity }}</td>
+                        <td>{{ m.user_name or '-' }}</td>
+                        <td class="row-note">{{ m.note or '-' }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty">
+            <h3>No movements recorded</h3>
+            <p>Stock coming in or going out will be listed here.</p>
+            <a class="btn primary" href="{{ url_for('movements.create') }}">Record a movement</a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

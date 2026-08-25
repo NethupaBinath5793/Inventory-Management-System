@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Add product' if mode == 'create' else 'Edit product' }} - StockRoom{% endblock %}
+
+{% block content %}
+{# One template serves both create and edit. The `mode` variable picks
+   the heading, the action URL and the button label - keeping them in
+   two files is how the two forms quietly drift apart. #}
+<div class="page-head">
+    <div>
+        <h1>{{ 'Add product' if mode == 'create' else 'Edit product' }}</h1>
+        <p class="sub">
+            {% if mode == 'create' %}
+                A new product starts with its opening stock, which is logged as a movement.
+            {% else %}
+                Changing the quantity here records an adjustment in the stock history.
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<section class="panel">
+    <div class="panel-body">
+        <form method="post"
+              action="{% if mode == 'create' %}{{ url_for('products.create') }}{% else %}{{ url_for('products.edit', product_id=product.product_id) }}{% endif %}">
+
+            <div class="form-grid">
+                <div class="field">
+                    <label for="sku">SKU</label>
+                    <input type="text" id="sku" name="sku" maxlength="40"
+                           value="{{ product.sku }}" required>
+                    <span class="hint">A unique code, e.g. LPT-1004. Saved in uppercase.</span>
+                </div>
+
+                <div class="field">
+                    <label for="name">Product name</label>
+                    <input type="text" id="name" name="name" maxlength="150"
+                           value="{{ product.name }}" required>
+                </div>
+
+                <div class="field">
+                    <label for="category_id">Category</label>
+                    <select id="category_id" name="category_id">
+                        <option value="">Uncategorised</option>
+                        {% for c in categories %}
+                            <option value="{{ c.category_id }}"
+                                {% if product.category_id == c.category_id %}selected{% endif %}>{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="supplier_id">Supplier</label>
+                    <select id="supplier_id" name="supplier_id">
+                        <option value="">No supplier</option>
+                        {% for s in suppliers %}
+                            <option value="{{ s.supplier_id }}"
+                                {% if product.supplier_id == s.supplier_id %}selected{% endif %}>{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="unit_price">Unit price ({{ currency }})</label>
+                    <input type="number" id="unit_price" name="unit_price"
+                           step="0.01" min="0" value="{{ product.unit_price }}" required>
+                </div>
+
+                <div class="field">
+                    <label for="quantity">Quantity in stock</label>
+                    <input type="number" id="quantity" name="quantity"
+                           min="0" value="{{ product.quantity }}" required>
+                    <span class="hint">
+                        {% if mode == 'edit' %}
+                            Use Stock movements for day-to-day changes. Edit here only to correct a miscount.
+                        {% else %}
+                            How many units you are holding right now.
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div class="field">
+                    <label for="reorder_level">Reorder level</label>
+                    <input type="number" id="reorder_level" name="reorder_level"
+                           min="0" value="{{ product.reorder_level }}" required>
+                    <span class="hint">Flag this product as low once stock drops to this figure.</span>
+                </div>
+            </div>
+
+            <div class="form-foot">
+                <button type="submit" class="btn primary">
+                    {{ 'Add product' if mode == 'create' else 'Save changes' }}
+                </button>
+                <a class="btn" href="{{ url_for('products.index') }}">Cancel</a>
+            </div>
+        </form>
+    </div>
+</section>
+
+{% if mode == 'edit' %}
+    <section class="panel">
+        <div class="panel-head"><h2>Delete this product</h2></div>
+        <div class="panel-body">
+            <p class="sub" style="margin-top:0">
+                Deleting removes the product and its entire stock history. This cannot be undone.
+            </p>
+            {# POST, not a link. A delete behind a GET can be triggered by
+               anything that follows links, including browser prefetch. #}
+            <form method="post"
+                  action="{{ url_for('products.delete', product_id=product.product_id) }}"
+                  onsubmit="return confirm('Delete {{ product.name }} and all of its stock history?');">
+                <button type="submit" class="btn danger">Delete product</button>
+            </form>
+        </div>
+    </section>
+{% endif %}
+{% endblock %}

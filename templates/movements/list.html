@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Stock movements - StockRoom{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Stock movements</h1>
+        <p class="sub">{{ total }} movement(s) recorded</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn primary" href="{{ url_for('movements.create') }}">Record movement</a>
+    </div>
+</div>
+
+<form class="filters" method="get" action="{{ url_for('movements.index') }}">
+    <div class="field grow">
+        <label for="q">Search</label>
+        <input type="text" id="q" name="q" value="{{ search }}"
+               placeholder="Product name or SKU">
+    </div>
+
+    <div class="field">
+        <label for="type">Type</label>
+        <select id="type" name="type">
+            <option value="">All movements</option>
+            <option value="IN"     {% if movement_type == 'IN'     %}selected{% endif %}>Received</option>
+            <option value="OUT"    {% if movement_type == 'OUT'    %}selected{% endif %}>Issued</option>
+            <option value="ADJUST" {% if movement_type == 'ADJUST' %}selected{% endif %}>Adjusted</option>
+        </select>
+    </div>
+
+    <div class="btn-row">
+        <button type="submit" class="btn primary">Apply</button>
+        {% if search or movement_type %}
+            <a class="btn" href="{{ url_for('movements.index') }}">Clear</a>
+        {% endif %}
+    </div>
+</form>
+
+<section class="panel">
+    {% if movements %}
+        <div class="table-wrap">
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th>When</th>
+                        <th>Product</th>
+                        <th>Type</th>
+                        <th class="num">Quantity</th>
+                        <th>Recorded by</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for m in movements %}
+                    <tr>
+                        <td class="row-note">{{ m.created_at | datetimeformat }}</td>
+                        <td>
+                            <a class="product-name"
+                               href="{{ url_for('products.view', product_id=m.product_id) }}">{{ m.product_name }}</a>
+                            <div class="sku">{{ m.sku }}</div>
+                        </td>
+                        <td>
+                            {% if m.movement_type == 'IN' %}
+                                <span class="pill in">Received</span>
+                            {% elif m.movement_type == 'OUT' %}
+                                <span class="pill out">Issued</span>
+                            {% else %}
+                                <span class="pill adjust">Adjusted</span>
+                            {% endif %}
+                        </td>
+                        <td class="num">{{ m.quantity }}</td>
+                        <td>{{ m.user_name or '-' }}</td>
+                        <td class="row-note">{{ m.note or '-' }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if total_pages > 1 %}
+            <div class="pager">
+                <span>Page {{ page }} of {{ total_pages }}</span>
+                <div class="pages">
+                    {% if page > 1 %}
+                        <a href="{{ url_for('movements.index', q=search, type=movement_type, page=page-1) }}">Previous</a>
+                    {% endif %}
+                    {% for n in range(1, total_pages + 1) %}
+                        {% if n == page %}
+                            <span class="current">{{ n }}</span>
+                        {% else %}
+                            <a href="{{ url_for('movements.index', q=search, type=movement_type, page=n) }}">{{ n }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page < total_pages %}
+                        <a href="{{ url_for('movements.index', q=search, type=movement_type, page=page+1) }}">Next</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
+    {% else %}
+        <div class="empty">
+            <h3>No movements found</h3>
+            <p>{% if search or movement_type %}Nothing matches those filters.{% else %}Record stock coming in or going out to build the history.{% endif %}</p>
+            <a class="btn primary" href="{{ url_for('movements.create') }}">Record movement</a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

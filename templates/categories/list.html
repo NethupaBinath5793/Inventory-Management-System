@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Categories - StockRoom{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Categories</h1>
+        <p class="sub">{{ categories | length }} category/categories</p>
+    </div>
+    {% if current_user.role == 'admin' %}
+        <div class="page-actions">
+            <a class="btn primary" href="{{ url_for('categories.create') }}">Add category</a>
+        </div>
+    {% endif %}
+</div>
+
+<section class="panel">
+    {% if categories %}
+        <div class="table-wrap">
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th class="num">Products</th>
+                        <th class="num">Units</th>
+                        {% if current_user.role == 'admin' %}<th></th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for c in categories %}
+                    <tr>
+                        <td>
+                            <a class="product-name"
+                               href="{{ url_for('products.index', category=c.category_id) }}">{{ c.name }}</a>
+                        </td>
+                        <td class="row-note">{{ c.description or '-' }}</td>
+                        <td class="num">{{ c.product_count }}</td>
+                        <td class="num">{{ '{:,}'.format(c.units) }}</td>
+                        {% if current_user.role == 'admin' %}
+                            <td>
+                                <div class="btn-row">
+                                    <a class="btn small"
+                                       href="{{ url_for('categories.edit', category_id=c.category_id) }}">Edit</a>
+                                    <form method="post"
+                                          action="{{ url_for('categories.delete', category_id=c.category_id) }}"
+                                          onsubmit="return confirm('Delete the category {{ c.name }}?');">
+                                        <button type="submit" class="btn small danger">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty">
+            <h3>No categories yet</h3>
+            <p>Categories group products together and drive the reports.</p>
+            {% if current_user.role == 'admin' %}
+                <a class="btn primary" href="{{ url_for('categories.create') }}">Add category</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

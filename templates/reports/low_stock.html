@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Low stock report - StockRoom{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Low stock report</h1>
+        <p class="sub">Generated {{ now | datetimeformat }}</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn" href="{{ url_for('reports.export', report='low-stock') }}">Export CSV</a>
+        <a class="btn" href="{{ url_for('reports.index') }}">All reports</a>
+    </div>
+</div>
+
+<div class="stat-grid compact">
+    <div class="stat {% if items %}alert{% endif %}">
+        <span class="label">Products to reorder</span>
+        <span class="value">{{ items | length }}</span>
+    </div>
+    <div class="stat">
+        <span class="label">Estimated restock cost</span>
+        <span class="value"><span class="unit">{{ currency }}</span> {{ restock_cost | money }}</span>
+        <span class="foot">to bring each item back to its reorder level</span>
+    </div>
+</div>
+
+<section class="panel">
+    {% if items %}
+        <div class="table-wrap">
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Category</th>
+                        <th class="num">In stock</th>
+                        <th class="num">Reorder at</th>
+                        <th class="num">Shortfall</th>
+                        <th class="num">Cost to restock</th>
+                        <th>Supplier</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for item in items %}
+                    <tr>
+                        <td>
+                            <a class="product-name"
+                               href="{{ url_for('products.view', product_id=item.product_id) }}">{{ item.name }}</a>
+                            <div class="sku">{{ item.sku }}</div>
+                        </td>
+                        <td>{{ item.category_name or 'Uncategorised' }}</td>
+                        <td class="num">{{ item.quantity }}</td>
+                        <td class="num">{{ item.reorder_level }}</td>
+                        <td class="num">{{ item.shortfall if item.shortfall > 0 else 0 }}</td>
+                        <td class="num">
+                            {{ ((item.shortfall if item.shortfall > 0 else 0) * item.unit_price) | money }}
+                        </td>
+                        <td>
+                            {{ item.supplier_name or '-' }}
+                            {% if item.supplier_phone %}
+                                <div class="sku">{{ item.supplier_phone }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.quantity == 0 %}
+                                <span class="pill empty">Empty</span>
+                            {% else %}
+                                <span class="pill low">Low</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty">
+            <h3>Nothing needs reordering</h3>
+            <p>Every product is above its reorder level.</p>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Reports - StockRoom{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Reports</h1>
+        <p class="sub">Read-only views over the stock data. Each one exports to CSV.</p>
+    </div>
+</div>
+
+<div class="report-grid">
+    <a class="report-card" href="{{ url_for('reports.low_stock') }}">
+        <h3>Low stock</h3>
+        <p>Everything at or below its reorder level, with the supplier to call
+           and an estimate of what restocking would cost.</p>
+    </a>
+
+    <a class="report-card" href="{{ url_for('reports.valuation') }}">
+        <h3>Stock valuation</h3>
+        <p>What the inventory is worth, broken down by category, plus the ten
+           products holding the most value.</p>
+    </a>
+
+    <a class="report-card" href="{{ url_for('reports.movements') }}">
+        <h3>Movement history</h3>
+        <p>Everything received, issued and adjusted over a date range you
+           choose, with the busiest products.</p>
+    </a>
+</div>
+{% endblock %}

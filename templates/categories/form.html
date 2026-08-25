@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Add category' if mode == 'create' else 'Edit category' }} - StockRoom{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>{{ 'Add category' if mode == 'create' else 'Edit category' }}</h1>
+    </div>
+</div>
+
+<section class="panel">
+    <div class="panel-body">
+        <form method="post"
+              action="{% if mode == 'create' %}{{ url_for('categories.create') }}{% else %}{{ url_for('categories.edit', category_id=category.category_id) }}{% endif %}">
+
+            <div class="form-grid">
+                <div class="field">
+                    <label for="name">Category name</label>
+                    <input type="text" id="name" name="name" maxlength="80"
+                           value="{{ category.name }}" required autofocus>
+                    <span class="hint">Must be unique, e.g. Peripherals.</span>
+                </div>
+
+                <div class="field wide">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description"
+                              maxlength="255">{{ category.description or '' }}</textarea>
+                    <span class="hint">Optional. What belongs in this category.</span>
+                </div>
+            </div>
+
+            <div class="form-foot">
+                <button type="submit" class="btn primary">
+                    {{ 'Add category' if mode == 'create' else 'Save changes' }}
+                </button>
+                <a class="btn" href="{{ url_for('categories.index') }}">Cancel</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

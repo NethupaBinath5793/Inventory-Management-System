@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} - StockRoom{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>{{ product.name }}</h1>
+        <p class="sub">
+            <span class="sku">{{ product.sku }}</span>
+            &middot; {{ product.category_name or 'Uncategorised' }}
+            {% if product.quantity == 0 %}
+                &middot; <span class="pill empty">Out of stock</span>
+            {% elif product.quantity <= product.reorder_level %}
+                &middot; <span class="pill low">Below reorder level</span>
+            {% else %}
+                &middot; <span class="pill ok">In stock</span>
+            {% endif %}
+        </p>
+    </div>
+    <div class="page-actions">
+        <a class="btn primary"
+           href="{{ url_for('movements.create', product=product.product_id) }}">Move stock</a>
+        {% if current_user.role == 'admin' %}
+            <a class="btn" href="{{ url_for('products.edit', product_id=product.product_id) }}">Edit</a>
+        {% endif %}
+        <a class="btn" href="{{ url_for('products.index') }}">Back to products</a>
+    </div>
+</div>
+
+<div class="split">
+    <section class="panel">
+        <div class="panel-head">
+            <h2>Stock history</h2>
+            <span class="row-note">Last 25 movements</span>
+        </div>
+
+        {% if history %}
+            <div class="table-wrap">
+                <table class="data">
+                    <thead>
+                        <tr>
+                            <th>When</th>
+                            <th>Type</th>
+                            <th class="num">Quantity</th>
+                            <th>Recorded by</th>
+                            <th>Note</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for m in history %}
+                        <tr>
+                            <td class="row-note">{{ m.created_at | datetimeformat }}</td>
+                            <td>
+                                {% if m.movement_type == 'IN' %}
+                                    <span class="pill in">Received</span>
+                                {% elif m.movement_type == 'OUT' %}
+                                    <span class="pill out">Issued</span>
+                                {% else %}
+                                    <span class="pill adjust">Adjusted</span>
+                                {% endif %}
+                            </td>
+                            <td class="num">{{ m.quantity }}</td>
+                            <td>{{ m.user_name or '-' }}</td>
+                            <td class="row-note">{{ m.note or '-' }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty">
+                <h3>No movements yet</h3>
+                <p>Nothing has come in or gone out for this product.</p>
+                <a class="btn primary"
+                   href="{{ url_for('movements.create', product=product.product_id) }}">Record a movement</a>
+            </div>
+        {% endif %}
+    </section>
+
+    <div>
+        <section class="panel">
+            <div class="panel-head"><h2>Stock</h2></div>
+            <div class="panel-body">
+                <dl class="detail-list">
+                    <dt>In stock</dt>
+                    <dd class="figure">{{ product.quantity }} unit(s)</dd>
+
+                    <dt>Reorder at</dt>
+                    <dd class="figure">{{ product.reorder_level }} unit(s)</dd>
+
+                    <dt>Unit price</dt>
+                    <dd class="figure">{{ currency }} {{ product.unit_price | money }}</dd>
+
+                    <dt>Stock value</dt>
+                    <dd class="figure">{{ currency }} {{ (product.quantity * product.unit_price) | money }}</dd>
+
+                    <dt>Added</dt>
+                    <dd>{{ product.created_at | datetimeformat('%d %b %Y') }}</dd>
+
+                    <dt>Updated</dt>
+                    <dd>{{ product.updated_at | datetimeformat }}</dd>
+                </dl>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-head"><h2>Supplier</h2></div>
+            <div class="panel-body">
+                {% if product.supplier_name %}
+                    <dl class="detail-list">
+                        <dt>Name</dt>
+                        <dd>{{ product.supplier_name }}</dd>
+                        <dt>Phone</dt>
+                        <dd class="figure">{{ product.supplier_phone or '-' }}</dd>
+                        <dt>Email</dt>
+                        <dd>{{ product.supplier_email or '-' }}</dd>
+                    </dl>
+                {% else %}
+                    <p class="row-note" style="margin:0">
+                        No supplier is linked to this product.
+                    </p>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

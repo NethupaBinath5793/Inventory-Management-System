@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Add supplier' if mode == 'create' else 'Edit supplier' }} - StockRoom{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>{{ 'Add supplier' if mode == 'create' else 'Edit supplier' }}</h1>
+    </div>
+</div>
+
+<section class="panel">
+    <div class="panel-body">
+        <form method="post"
+              action="{% if mode == 'create' %}{{ url_for('suppliers.create') }}{% else %}{{ url_for('suppliers.edit', supplier_id=supplier.supplier_id) }}{% endif %}">
+
+            <div class="form-grid">
+                <div class="field">
+                    <label for="name">Supplier name</label>
+                    <input type="text" id="name" name="name" maxlength="120"
+                           value="{{ supplier.name }}" required autofocus>
+                </div>
+
+                <div class="field">
+                    <label for="contact_person">Contact person</label>
+                    <input type="text" id="contact_person" name="contact_person"
+                           maxlength="100" value="{{ supplier.contact_person or '' }}">
+                </div>
+
+                <div class="field">
+                    <label for="phone">Phone</label>
+                    <input type="text" id="phone" name="phone" maxlength="30"
+                           value="{{ supplier.phone or '' }}">
+                    <span class="hint">Digits, spaces, +, - and ( ) only.</span>
+                </div>
+
+                <div class="field">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" maxlength="120"
+                           value="{{ supplier.email or '' }}">
+                </div>
+
+                <div class="field wide">
+                    <label for="address">Address</label>
+                    <textarea id="address" name="address"
+                              maxlength="255">{{ supplier.address or '' }}</textarea>
+                </div>
+            </div>
+
+            <div class="form-foot">
+                <button type="submit" class="btn primary">
+                    {{ 'Add supplier' if mode == 'create' else 'Save changes' }}
+                </button>
+                <a class="btn" href="{{ url_for('suppliers.index') }}">Cancel</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

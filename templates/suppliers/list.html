@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Suppliers - StockRoom{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Suppliers</h1>
+        <p class="sub">{{ suppliers | length }} supplier(s){% if search %} matching "{{ search }}"{% endif %}</p>
+    </div>
+    {% if current_user.role == 'admin' %}
+        <div class="page-actions">
+            <a class="btn primary" href="{{ url_for('suppliers.create') }}">Add supplier</a>
+        </div>
+    {% endif %}
+</div>
+
+<form class="filters" method="get" action="{{ url_for('suppliers.index') }}">
+    <div class="field grow">
+        <label for="q">Search</label>
+        <input type="text" id="q" name="q" value="{{ search }}"
+               placeholder="Supplier or contact name">
+    </div>
+    <div class="btn-row">
+        <button type="submit" class="btn primary">Search</button>
+        {% if search %}
+            <a class="btn" href="{{ url_for('suppliers.index') }}">Clear</a>
+        {% endif %}
+    </div>
+</form>
+
+<section class="panel">
+    {% if suppliers %}
+        <div class="table-wrap">
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th>Supplier</th>
+                        <th>Contact</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th class="num">Products</th>
+                        {% if current_user.role == 'admin' %}<th></th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for s in suppliers %}
+                    <tr>
+                        <td>
+                            <span class="product-name">{{ s.name }}</span>
+                            {% if s.address %}<div class="row-note">{{ s.address }}</div>{% endif %}
+                        </td>
+                        <td>{{ s.contact_person or '-' }}</td>
+                        <td class="sku">{{ s.phone or '-' }}</td>
+                        <td class="row-note">{{ s.email or '-' }}</td>
+                        <td class="num">{{ s.product_count }}</td>
+                        {% if current_user.role == 'admin' %}
+                            <td>
+                                <div class="btn-row">
+                                    <a class="btn small"
+                                       href="{{ url_for('suppliers.edit', supplier_id=s.supplier_id) }}">Edit</a>
+                                    <form method="post"
+                                          action="{{ url_for('suppliers.delete', supplier_id=s.supplier_id) }}"
+                                          onsubmit="return confirm('Delete the supplier {{ s.name }}?');">
+                                        <button type="submit" class="btn small danger">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty">
+            {% if search %}
+                <h3>No suppliers match "{{ search }}"</h3>
+                <p>Try a shorter search term.</p>
+                <a class="btn" href="{{ url_for('suppliers.index') }}">Clear search</a>
+            {% else %}
+                <h3>No suppliers yet</h3>
+                <p>Add the companies you buy stock from.</p>
+                {% if current_user.role == 'admin' %}
+                    <a class="btn primary" href="{{ url_for('suppliers.create') }}">Add supplier</a>
+                {% endif %}
+            {% endif %}
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

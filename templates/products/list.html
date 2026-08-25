@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}Products - StockRoom{% endblock %}
+
+{% macro sort_link(column, label) %}
+    {# Clicking the same column again flips the direction. #}
+    {% set next_dir = 'desc' if (sort == column and direction == 'asc') else 'asc' %}
+    <a href="{{ url_for('products.index', q=search, category=category_id,
+                        stock=stock_filter, sort=column, dir=next_dir) }}">
+        {{ label }}{% if sort == column %}{{ ' \u2193' if direction == 'desc' else ' \u2191' }}{% endif %}
+    </a>
+{% endmacro %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Products</h1>
+        <p class="sub">{{ total }} product(s){% if search or category_id or stock_filter %} matching your filters{% endif %}</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn" href="{{ url_for('reports.export', report='inventory') }}">Export CSV</a>
+        {% if current_user.role == 'admin' %}
+            <a class="btn primary" href="{{ url_for('products.create') }}">Add product</a>
+        {% endif %}
+    </div>
+</div>
+
+{# ---- Filters. A GET form, so the filters end up in the URL and
+       the page can be bookmarked or shared. ------------------- #}
+<form class="filters" method="get" action="{{ url_for('products.index') }}">
+    <div class="field grow">
+        <label for="q">Search</label>
+        <input type="text" id="q" name="q" value="{{ search }}"
+               placeholder="Product name or SKU">
+    </div>
+
+    <div class="field">
+        <label for="category">Category</label>
+        <select id="category" name="category">
+            <option value="">All categories</option>
+            {% for c in categories %}
+                <option value="{{ c.category_id }}"
+                    {% if category_id == c.category_id|string %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="field">
+        <label for="stock">Stock level</label>
+        <select id="stock" name="stock">
+            <option value="">Any level</option>
+            <option value="ok"  {% if stock_filter == 'ok'  %}selected{% endif %}>Healthy</option>
+            <option value="low" {% if stock_filter == 'low' %}selected{% endif %}>Low</option>
+            <option value="out" {% if stock_filter == 'out' %}selected{% endif %}>Out of stock</option>
+        </select>
+    </div>
+
+    <div class="btn-row">
+        <button type="submit" class="btn primary">Apply</button>
+        {% if search or category_id or stock_filter %}
+            <a class="btn" href="{{ url_for('products.index') }}">Clear</a>
+        {% endif %}
+    </div>
+</form>
+
+<section class="panel">
+    {% if products %}
+        <div class="table-wrap">
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th>{{ sort_link('name', 'Product') }}</th>
+                        <th>Category</th>
+                        <th>Supplier</th>
+                        <th class="num">{{ sort_link('price', 'Unit price') }}</th>
+                        <th class="num">{{ sort_link('quantity', 'In stock') }}</th>
+                        <th class="num">Value</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in products %}
+                    {# The gauge fill: stock as a proportion of twice the
+                       reorder level, so sitting exactly on the reorder
+                       point reads as a half-full bar. Capped at 100%. #}
+                    {% set ceiling = (p.reorder_level * 2) if p.reorder_level > 0 else (p.quantity or 1) %}
+                    {% set fill = [(p.quantity / ceiling * 100) | round | int, 100] | min %}
+                    <tr>
+                        <td>
+                            <a class="product-name"
+                               href="{{ url_for('products.view', product_id=p.product_id) }}">{{ p.name }}</a>
+                            <div class="sku">{{ p.sku }}</div>
+                        </td>
+                        <td>{{ p.category_name or 'Uncategorised' }}</td>
+                        <td>{{ p.supplier_name or '-' }}</td>
+                        <td class="num">{{ p.unit_price | money }}</td>
+                        <td class="num">
+                            <div class="gauge">
+                                <div class="gauge-track">
+                                    <div class="gauge-fill {% if p.quantity == 0 %}empty{% elif p.quantity <= p.reorder_level %}low{% endif %}"
+                                         style="width: {{ fill }}%"></div>
+                                </div>
+                                <span class="gauge-figure">{{ p.quantity }}</span>
+                            </div>
+                            {% if p.quantity == 0 %}
+                                <span class="pill empty">Empty</span>
+                            {% elif p.quantity <= p.reorder_level %}
+                                <span class="pill low">Low</span>
+                            {% endif %}
+                        </td>
+                        <td class="num">{{ (p.quantity * p.unit_price) | money }}</td>
+                        <td>
+                            <div class="btn-row">
+                                <a class="btn small"
+                                   href="{{ url_for('movements.create', product=p.product_id) }}">Move stock</a>
+                                {% if current_user.role == 'admin' %}
+                                    <a class="btn small"
+                                       href="{{ url_for('products.edit', product_id=p.product_id) }}">Edit</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if total_pages > 1 %}
+            <div class="pager">
+                <span>Page {{ page }} of {{ total_pages }}</span>
+                <div class="pages">
+                    {% if page > 1 %}
+                        <a href="{{ url_for('products.index', q=search, category=category_id,
+                                            stock=stock_filter, sort=sort, dir=direction,
+                                            page=page-1) }}">Previous</a>
+                    {% endif %}
+                    {% for n in range(1, total_pages + 1) %}
+                        {% if n == page %}
+                            <span class="current">{{ n }}</span>
+                        {% else %}
+                            <a href="{{ url_for('products.index', q=search, category=category_id,
+                                                stock=stock_filter, sort=sort, dir=direction,
+                                                page=n) }}">{{ n }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page < total_pages %}
+                        <a href="{{ url_for('products.index', q=search, category=category_id,
+                                            stock=stock_filter, sort=sort, dir=direction,
+                                            page=page+1) }}">Next</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
+    {% else %}
+        <div class="empty">
+            {% if search or category_id or stock_filter %}
+                <h3>No products match those filters</h3>
+                <p>Try a different search term or clear the filters.</p>
+                <a class="btn" href="{{ url_for('products.index') }}">Clear filters</a>
+            {% else %}
+                <h3>The catalogue is empty</h3>
+                <p>Add your first product to start tracking stock.</p>
+                {% if current_user.role == 'admin' %}
+                    <a class="btn primary" href="{{ url_for('products.create') }}">Add product</a>
+                {% endif %}
+            {% endif %}
+        </div>
+    {% endif %}
+</section>
+{% endblock %}
